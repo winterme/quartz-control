@@ -20,6 +20,7 @@ public class QuartzConfig {
         MethodInvokingJobDetailFactoryBean factoryBean = new MethodInvokingJobDetailFactoryBean();
         // 是否并发执行
         factoryBean.setConcurrent(true);
+        factoryBean.setGroup("任务一组");
         // 使用哪个对象
         factoryBean.setTargetObject(jobGetAll);
         // 使用哪个方法
@@ -34,6 +35,7 @@ public class QuartzConfig {
         CronTriggerFactoryBean factoryBean = new CronTriggerFactoryBean();
         // 设置job对象
         factoryBean.setJobDetail( job1.getObject() );
+        factoryBean.setGroup("任务一组");
         // 设置执行时间
         factoryBean.setCronExpression("0/5 * * * * ?");
         return  factoryBean;
@@ -97,7 +99,7 @@ public class QuartzConfig {
 
     // 定义 任务，传入 triggers
     @Bean(name = "sch")
-    public SchedulerFactoryBean scheduler1(Trigger ... triggers){
+    public SchedulerFactoryBean scheduler1(Trigger... triggers){
         SchedulerFactoryBean factoryBean = new SchedulerFactoryBean();
         // 设置 triggers
         factoryBean.setTriggers( triggers );

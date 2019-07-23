@@ -16,6 +16,11 @@ import org.springframework.context.annotation.Configuration;
 public class JobGetAll {
 
     public void getAll(){
+        try {
+            Thread.sleep(5*1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         System.out.println( "======>任务二" );
     }
 

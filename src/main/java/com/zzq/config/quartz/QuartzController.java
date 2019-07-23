@@ -72,6 +72,44 @@ public class QuartzController {
         return map;
     }
 
+    @ApiOperation(value = "查询所有的正在执行的任务", notes = "查询所有的正在执行的任务，返回json，key=> groupName")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful — 请求已完成"),
+            @ApiResponse(code = 400, message = "请求中有语法问题，或不能满足请求"),
+            @ApiResponse(code = 401, message = "未授权客户机访问数据"),
+            @ApiResponse(code = 404, message = "服务器找不到给定的资源；文档不存在"),
+            @ApiResponse(code = 500, message = "服务器不能完成请求")}
+    )
+    @RequestMapping(value = "/getExecutionJobs" , method = RequestMethod.GET)
+    @ResponseBody
+    public Object getExecutionJobs() throws SchedulerException {
+        HashMap<String, ArrayList<QuartzJobsVO>> map = new HashMap<>();
+        ArrayList<QuartzJobsVO> quartzJobsVOList = new ArrayList<>();
+        List<JobExecutionContext> executingJobs = scheduler.getCurrentlyExecutingJobs();
+        for (JobExecutionContext executionContext : executingJobs) {
+            JobDetailImpl jobDetail = (JobDetailImpl) executionContext.getJobDetail();
+            QuartzJobsVO vo = new QuartzJobsVO();
+            vo.setJobDetailName( jobDetail.getName() );
+            vo.setGroupName( jobDetail.getGroup() );
+            vo.setTimeZone( ((CronTrigger) executionContext.getTrigger()).getTimeZone().getID() );
+            vo.setJobCronExpression( ((CronTrigger) executionContext.getTrigger()).getCronExpression() );
+
+            quartzJobsVOList.add(vo);
+        }
+
+        for (QuartzJobsVO vo : quartzJobsVOList) {
+            if( map.keySet().contains(vo.getGroupName()) ){
+                map.get(vo.getGroupName()).add(vo);
+            }else{
+                ArrayList<QuartzJobsVO> data = new ArrayList<>();
+                data.add(vo);
+                map.put(vo.getGroupName(), data);
+            }
+        }
+
+        return map;
+    }
+
     @ApiOperation(value = "暂停定时任务", notes = "传入定时任务名字，进行暂停定时任务，定时任务名字可以从  上面那个查询所有的方法中获取")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successful — 请求已完成"),
@@ -81,16 +119,17 @@ public class QuartzController {
             @ApiResponse(code = 500, message = "服务器不能完成请求")}
     )
     @ApiImplicitParams({
-            @ApiImplicitParam(paramType = "query", name = "jobname", value = "jobname", required = true, dataType = "String")
+            @ApiImplicitParam(paramType = "query", name = "jobname", value = "jobname", required = true, dataType = "String"),
+            @ApiImplicitParam(paramType = "query", name = "groupName", value = "groupName", required = true, dataType = "String")
     })
     @RequestMapping(value = "/pause", method = RequestMethod.GET)
     @ResponseBody
-    public String pause(String jobname) throws Exception {
+    public String pause(String jobname , String groupName) throws Exception {
 
-        JobKey key = new JobKey(jobname);
+        JobKey key = new JobKey(jobname , groupName);
         scheduler.pauseJob(key);
 
-        return "pause->" + jobname;
+        return "pause->" + groupName + "->" + jobname;
     }
 
     @ApiOperation(value = "启动定时任务", notes = "传入定时任务名字，进行启动定时任务，定时任务名字可以从  上面那个查询所有的方法中获取")
@@ -102,16 +141,17 @@ public class QuartzController {
             @ApiResponse(code = 500, message = "服务器不能完成请求")}
     )
     @ApiImplicitParams({
-            @ApiImplicitParam(paramType = "query", name = "jobname", value = "jobName", required = true, dataType = "String")
+            @ApiImplicitParam(paramType = "query", name = "jobname", value = "jobName", required = true, dataType = "String"),
+            @ApiImplicitParam(paramType = "query", name = "groupName", value = "groupName", required = true, dataType = "String")
     })
     @RequestMapping(value = "/start", method = RequestMethod.GET)
     @ResponseBody
-    public String start(String jobname) throws Exception {
+    public String start(String jobname , String groupName) throws Exception {
 
-        JobKey key = new JobKey(jobname);
+        JobKey key = new JobKey(jobname , groupName);
         scheduler.resumeJob(key);
 
-        return "start->" + jobname;
+        return "start->" + groupName + "->" + jobname;
     }
 
     @ApiOperation(value = "动态修改定时任务的执行时间", notes = "传入定时任务名字，和cron 表达式")
@@ -124,13 +164,14 @@ public class QuartzController {
     )
     @ApiImplicitParams({
             @ApiImplicitParam(paramType = "query", name = "jobname", value = "jobName", required = true, dataType = "String"),
-            @ApiImplicitParam(paramType = "query", name = "cron", value = "cronExp", required = true, dataType = "String")
+            @ApiImplicitParam(paramType = "query", name = "cron", value = "cronExp", required = true, dataType = "String"),
+            @ApiImplicitParam(paramType = "query", name = "groupName", value = "groupName", required = true, dataType = "String")
     })
     @RequestMapping(value = "/trigger", method = RequestMethod.GET)
     @ResponseBody
-    public String trigger(String jobname, String cron) throws Exception {
+    public String trigger(String jobname, String groupName ,String cron) throws Exception {
         // 获取任务
-        JobKey jobKey = new JobKey(jobname);
+        JobKey jobKey = new JobKey(jobname , groupName);
         // 获取 jobDetail
         JobDetail jobDetail = scheduler.getJobDetail(jobKey);
         // 生成 trigger
@@ -143,7 +184,7 @@ public class QuartzController {
         // 启动任务
         scheduler.scheduleJob(jobDetail, trigger);
 
-        return "trigger->" + jobname + "[cron]" + cron;
+        return "trigger->" + groupName + "->" + jobname + "[cron]->" + cron;
     }
 
 }
