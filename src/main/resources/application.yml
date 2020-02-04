@@ -1,2 +1,9 @@
+
 server:
-  port: 1209
+  port: 9999
+  servlet:
+    context-path: /q-control
+spring:
+  jackson:
+    date-format: yyyyMMddHHmmss
+    time-zone: GMT+8

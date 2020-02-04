@@ -10,10 +10,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author maxwell
@@ -46,6 +43,7 @@ public class QuartzController {
     public Object getAllJob() throws Exception {
         HashMap<String, Object> map = new HashMap<>();
         List<String> jobGroupNames = scheduler.getJobGroupNames();
+        ArrayList<QuartzJobsVO> vos = new ArrayList<>();
         for (String groupName : jobGroupNames) {
             ArrayList<QuartzJobsVO> quartzJobsVOList = new ArrayList<>();
             //组装group的匹配，为了模糊获取所有的triggerKey或者jobKey
@@ -64,12 +62,15 @@ public class QuartzController {
                 quartzJobsVO.setJobDetailName(jobDetail.getName());
                 quartzJobsVO.setJobCronExpression(trigger.getCronExpression());
                 quartzJobsVO.setTimeZone(trigger.getTimeZone().getID());
+                quartzJobsVO.setFinalFireTime(trigger.getPreviousFireTime());
                 quartzJobsVOList.add(quartzJobsVO);
+                vos.add(quartzJobsVO);
             }
             map.put(groupName, quartzJobsVOList);
         }
 
-        return map;
+
+        return vos;
     }
 
     @ApiOperation(value = "查询所有的正在执行的任务", notes = "查询所有的正在执行的任务，返回json，key=> groupName")
@@ -93,11 +94,12 @@ public class QuartzController {
             vo.setGroupName( jobDetail.getGroup() );
             vo.setTimeZone( ((CronTrigger) executionContext.getTrigger()).getTimeZone().getID() );
             vo.setJobCronExpression( ((CronTrigger) executionContext.getTrigger()).getCronExpression() );
+            vo.setFinalFireTime(executionContext.getFireTime());
 
             quartzJobsVOList.add(vo);
         }
 
-        for (QuartzJobsVO vo : quartzJobsVOList) {
+        /*for (QuartzJobsVO vo : quartzJobsVOList) {
             if( map.keySet().contains(vo.getGroupName()) ){
                 map.get(vo.getGroupName()).add(vo);
             }else{
@@ -105,9 +107,9 @@ public class QuartzController {
                 data.add(vo);
                 map.put(vo.getGroupName(), data);
             }
-        }
+        }*/
 
-        return map;
+        return quartzJobsVOList;
     }
 
     @ApiOperation(value = "暂停定时任务", notes = "传入定时任务名字，进行暂停定时任务，定时任务名字可以从  上面那个查询所有的方法中获取")

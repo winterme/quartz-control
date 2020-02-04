@@ -1,7 +1,11 @@
 package com.zzq.config.quartz.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.util.Date;
 
 /**
  * @author maxwell
@@ -22,6 +26,18 @@ public class QuartzJobsVO {
     private String timeZone;
     @ApiModelProperty(value = "任务所在组" , name = "groupName")
     private String groupName;
+    @ApiModelProperty(value = "最后执行时间" , name = "finalFireTime")
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyyMMddHHmmss")
+    @DateTimeFormat(pattern="yyyyMMddHHmmss")
+    private Date finalFireTime;
+
+    public Date getFinalFireTime() {
+        return finalFireTime;
+    }
+
+    public void setFinalFireTime(Date finalFireTime) {
+        this.finalFireTime = finalFireTime;
+    }
 
     public String getJobDetailName() {
         return jobDetailName;
